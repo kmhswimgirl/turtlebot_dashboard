@@ -1,0 +1,117 @@
+/* TUI (Text User Interface) style for the whole dashboard */
+body {
+    background: #181c23;
+    font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', monospace;
+    margin: 0;
+    padding: 0;
+    color: #33ff33;
+}
+
+table {
+    table-layout: auto; /* Let columns size to content */
+    width: auto;        /* Remove fixed width */
+    min-width: 0;
+    max-width: none;
+    margin: 24px 0 0 40px; 
+    border-collapse: collapse;
+    background: #181c23;
+    font-size: 1.05em;
+    font-family: inherit;
+    box-shadow: 0 0 0 2px #33ff33;
+}
+
+th, td {
+    padding: 8px 16px;
+    text-align: left;
+    font-family: inherit;
+    border-right: 1px solid #33ff33;
+    border-bottom: 1px solid #33ff33;
+    white-space: nowrap; /* Prevent line breaks in cells */
+}
+
+th:last-child, td:last-child {
+    border-right: none;
+}
+
+th {
+    background: #181c23;
+    color: #33ff33;
+    font-weight: 700;
+    border-top: 1px solid #33ff33;
+    border-bottom: 2px double #33ff33;
+    letter-spacing: 1px;
+}
+
+tr:first-child th {
+    border-top: 2px double #33ff33;
+}
+
+tbody tr {
+    transition: background 0.2s;
+}
+
+tbody tr:nth-child(even) {
+    background: #1a1e24;
+}
+
+tbody tr:nth-child(odd) {
+    background: #181c23;
+}
+
+tbody tr:hover {
+    background: #26332a;
+}
+
+td {
+    color: #33ff33;
+}
+
+tbody tr:last-child td {
+    border-bottom: 2px double #33ff33;
+}
+
+/* ROS logo dots for fun */
+.ros-logo-title {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    margin-top: 32px;
+    margin-bottom: 24px;
+    margin-left:40px;
+    font-size: medium;
+}
+
+.ros-logo {
+    display: grid;
+    grid-template-columns: repeat(3, 12px);
+    grid-template-rows: repeat(3, 12px);
+    gap: 6px;
+    margin-right: 18px;
+}
+
+.ros-dot {
+    width: 12px;
+    height: 12px;
+    background: #33ff33;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+th:nth-child(2), /* Name column */
+td:nth-child(2),
+th:nth-child(3), /* IP column */
+td:nth-child(3) {
+    padding-right: 48px;
+}
+
+.footer {
+    width: 100%;
+    text-align: center;
+    color: #33ff33;
+    font-family: inherit;
+    font-size: 1em;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+    letter-spacing: 1px;
+}

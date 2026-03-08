@@ -1,0 +1,152 @@
+#include <WiFi.h>
+#include <SPIFFS.h>
+#include <ESP32WebServer.h>
+#include <ArduinoJson.h>
+#include <WebSocketsServer.h>
+#include <wifi-conn.h>
+
+// constants
+const int num_turtlebots = 32;
+
+// wifi credentials
+wifiPass psk;
+const char* ssid = psk.network;
+const char* password = psk.password;
+
+ESP32WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+String devices[num_turtlebots][4];
+
+void loadDevicesFromFile() {
+  File file = SPIFFS.open("/turtlebots.txt", "r");
+  if (!file) {
+    Serial.println("failed to open turtlebots.txt");
+    return;
+  }
+  int i = 0;
+  while (file.available() && i < num_turtlebots) {
+    String line = file.readStringUntil('\n');
+    line.trim();
+    if (line.length() == 0) continue;
+    int idx1 = line.indexOf(',');
+    int idx2 = line.indexOf(',', idx1 + 1);
+    int idx3 = line.indexOf(',', idx2 + 1);
+    if (idx1 == -1 || idx2 == -1 || idx3 == -1) continue;
+    devices[i][0] = line.substring(0, idx1);
+    devices[i][1] = line.substring(idx1 + 1, idx2);
+    devices[i][2] = line.substring(idx2 + 1, idx3);
+    devices[i][3] = line.substring(idx3 + 1);
+    i++;
+  }
+  file.close();
+}
+
+void handleUpdateDevice() {
+  if (server.method() == HTTP_POST) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, server.arg("plain"));
+    if (error) {
+      server.send(400, "text/plain", "Invalid JSON");
+      return;
+    }
+    String name = doc["name"];
+    bool updated = false;
+    for (int i = 0; i < num_turtlebots; i++) {
+      if (devices[i][0] == name) { // only update column if present in JSON
+        if (!doc["ip"].isNull()) devices[i][1] = doc["ip"].as<String>();
+        if (!doc["dns"].isNull()) devices[i][2] = doc["dns"].as<String>();
+        if (!doc["lastConnected"].isNull()) devices[i][3] = doc["lastConnected"].as<String>();
+        updated = true;
+        break;
+      }
+    }
+    if (updated) {
+      server.send(200, "application/json", "{\"status\":\"success\",\"message\":\"Device updated successfully\"}");
+      webSocket.broadcastTXT("update");
+    } else {
+      server.send(404, "application/json", "{\"status\":\"error\",\"message\":\"Device not found\"}");
+    }
+  } else {
+    server.send(405, "text/plain", "Method Not Allowed");
+  }
+}
+
+void handleGetDevices() {
+  JsonDocument doc;
+  JsonArray arr = doc.to<JsonArray>();
+  for (int i = 0; i < num_turtlebots; i++) {
+    JsonObject obj = arr.add<JsonObject>();
+    obj["name"] = devices[i][0];
+    obj["ip"] = devices[i][1];
+    obj["dns"] = devices[i][2];
+    obj["lastConnected"] = devices[i][3];
+  }
+  String output;
+  serializeJson(doc, output);
+  server.send(200, "application/json", output);
+}
+
+void handleDNS(){
+  
+}
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi!");
+
+  if (!SPIFFS.begin(true)) {
+    Serial.println("SPIFFS mount failed");
+    return;
+  }
+  loadDevicesFromFile();
+
+  server.on("/", HTTP_GET, []() {
+    File file = SPIFFS.open("/index.html", "r");
+    if (!file) {
+      server.send(500, "text/plain", "failed to open index.html");
+      return;
+    }
+    server.streamFile(file, "text/html");
+    file.close();
+  });
+  server.on("/updateDevice", HTTP_POST, handleUpdateDevice);
+  server.on("/devices", HTTP_GET, handleGetDevices);
+  server.on("/dns", HTTP_POST, handleDNS);
+
+  // general server for static files
+  server.onNotFound([]() {
+    String path = server.uri();
+    String contentType = "text/plain";
+    if (path == "/") {
+      path = "/index.html";
+      contentType = "text/html";
+    } else if (path.endsWith(".css")) {
+      contentType = "text/css";
+    } else if (path.endsWith(".js")) {
+      contentType = "application/javascript";
+    } else if (path.endsWith(".html")) {
+      contentType = "text/html";
+    }
+    File file = SPIFFS.open(path, "r");
+    if (!file) {
+      server.send(404, "text/plain", "File Not Found");
+      return;
+    }
+    server.streamFile(file, contentType);
+    file.close();
+  });
+
+  server.begin();
+  webSocket.begin();
+}
+
+void loop() {
+  server.handleClient();
+  webSocket.loop();
+}
