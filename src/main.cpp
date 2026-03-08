@@ -27,6 +27,7 @@ ESP32WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 String devices[num_turtlebots][4];
+int dnsIndex = 0; // Add this global variable
 
 void loadDevicesFromFile() {
   File file = SPIFFS.open("/turtlebots.txt", "r");
@@ -104,18 +105,38 @@ void handleGetDevices() {
 }
 
 void checkAllTurtlebotDNS() {
-  for (int i = 0; i < num_turtlebots; i++) {
-    String name = devices[i][0];
+  if (dnsIndex >= num_turtlebots) dnsIndex = 0;
+  String name = devices[dnsIndex][0];
+  if (name.length() > 0) {
+    String domain = name + ".dyn.wpi.edu";
+    if (Ping.ping(domain.c_str())) {
+      devices[dnsIndex][2] = "Y";
+    } else {
+      devices[dnsIndex][2] = "N";
+    }
+  } else {
+    devices[dnsIndex][2] = "N";
+  }
+  dnsIndex++;
+}
+
+void dnsCheckTask(void *parameter) {
+  int localDnsIndex = 0;
+  for (;;) {
+    String name = devices[localDnsIndex][0];
     if (name.length() > 0) {
       String domain = name + ".dyn.wpi.edu";
       if (Ping.ping(domain.c_str())) {
-        devices[i][2] = "Y";
+        devices[localDnsIndex][2] = "Y";
       } else {
-        devices[i][2] = "N";
+        devices[localDnsIndex][2] = "N";
       }
     } else {
-      devices[i][2] = "N";
+      devices[localDnsIndex][2] = "N";
     }
+    localDnsIndex = (localDnsIndex + 1) % num_turtlebots;
+    webSocket.broadcastTXT("update"); // notify clients
+    vTaskDelay(250 / portTICK_PERIOD_MS); // wait 1 second between checks
   }
 }
 
@@ -137,6 +158,7 @@ void setup() {
     Serial.println("SPIFFS mount failed");
     return;
   }
+
   loadDevicesFromFile();
 
   server.on("/", HTTP_GET, []() {
@@ -177,18 +199,11 @@ void setup() {
   server.begin();
   webSocket.begin();
 
-  // check all DNS upon starting or rebooting
-  checkAllTurtlebotDNS();
+  // dns checking task
+  xTaskCreatePinnedToCore(dnsCheckTask, "DNSCheckTask", 4096, NULL, 1, NULL, 1);
 }
 
 void loop() {
   server.handleClient();
   webSocket.loop();
-
-  // dns loop
-  if (millis() - dnsCheck > dnsInterval) {
-    checkAllTurtlebotDNS();
-    dnsCheck = millis();
-    webSocket.broadcastTXT("update"); // update clients
-  }
 }
