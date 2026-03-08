@@ -5,11 +5,18 @@
 #include <WebSocketsServer.h>
 #include <wifi-conn.h>
 #include <ESP32Ping.h>
+#include <time.h>
 
 // constants
 const int num_turtlebots = 32;
 unsigned long dnsCheck = 0;
 const unsigned long dnsInterval = 60000;
+char timeStr[32];
+
+// NTP server setup
+const char* ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = -4 * 3600; 
+const int daylightOffset_sec = 3600;  
 
 // wifi credentials
 wifiPass psk;
@@ -59,7 +66,13 @@ void handletbUpdate() {
       if (devices[i][0] == name) { // only update column if present in JSON
         if (!doc["ip"].isNull()) devices[i][1] = doc["ip"].as<String>();
         if (!doc["dns"].isNull()) devices[i][2] = doc["dns"].as<String>();
-        if (!doc["lastConnected"].isNull()) devices[i][3] = doc["lastConnected"].as<String>();
+
+        struct tm timeinfo;
+        if (getLocalTime(&timeinfo)) {
+          strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &timeinfo);
+          devices[i][3] = String(timeStr);
+        }
+
         updated = true;
         break;
       }
@@ -115,6 +128,11 @@ void setup() {
   }
   Serial.println("Connected to WiFi!");
 
+  // NTP server config
+  setenv("TZ", "America/New_York", 1); // this doesnt work, had to use offset :(
+  tzset();
+  configTime(gmtOffset_sec, 0, ntpServer);
+
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS mount failed");
     return;
@@ -158,6 +176,9 @@ void setup() {
 
   server.begin();
   webSocket.begin();
+
+  // check all DNS upon starting or rebooting
+  checkAllTurtlebotDNS();
 }
 
 void loop() {
