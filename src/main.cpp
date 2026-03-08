@@ -4,9 +4,12 @@
 #include <ArduinoJson.h>
 #include <WebSocketsServer.h>
 #include <wifi-conn.h>
+#include <ESP32Ping.h>
 
 // constants
 const int num_turtlebots = 32;
+unsigned long dnsCheck = 0;
+const unsigned long dnsInterval = 60000;
 
 // wifi credentials
 wifiPass psk;
@@ -42,7 +45,7 @@ void loadDevicesFromFile() {
   file.close();
 }
 
-void handleUpdateDevice() {
+void handletbUpdate() {
   if (server.method() == HTTP_POST) {
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, server.arg("plain"));
@@ -87,8 +90,20 @@ void handleGetDevices() {
   server.send(200, "application/json", output);
 }
 
-void handleDNS(){
-  
+void checkAllTurtlebotDNS() {
+  for (int i = 0; i < num_turtlebots; i++) {
+    String name = devices[i][0];
+    if (name.length() > 0) {
+      String domain = name + ".dyn.wpi.edu";
+      if (Ping.ping(domain.c_str())) {
+        devices[i][2] = "Y";
+      } else {
+        devices[i][2] = "N";
+      }
+    } else {
+      devices[i][2] = "N";
+    }
+  }
 }
 
 void setup() {
@@ -115,9 +130,8 @@ void setup() {
     server.streamFile(file, "text/html");
     file.close();
   });
-  server.on("/updateDevice", HTTP_POST, handleUpdateDevice);
+  server.on("/tbUpdate", HTTP_POST, handletbUpdate);
   server.on("/devices", HTTP_GET, handleGetDevices);
-  server.on("/dns", HTTP_POST, handleDNS);
 
   // general server for static files
   server.onNotFound([]() {
@@ -149,4 +163,11 @@ void setup() {
 void loop() {
   server.handleClient();
   webSocket.loop();
+
+  // dns loop
+  if (millis() - dnsCheck > dnsInterval) {
+    checkAllTurtlebotDNS();
+    dnsCheck = millis();
+    webSocket.broadcastTXT("update"); // update clients
+  }
 }
