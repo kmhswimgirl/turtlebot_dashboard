@@ -11,4 +11,4 @@ pio run --target uploadfs
 more on this coming soon...
 
 ## Add/Remove Turtlebots
-Open `data/turtlebots.txt` and add or remove names in order of the turtlebot numbers. Make sure to leave commas and a "N" for DNS status as this file is the config file for the status table. Also update the constant `num_turtlebots` in `main.cpp` to make sure everyhting renders properly.
+Open `data/turtlebots.txt` and add or remove names in order of the turtlebot numbers. Make sure to leave commas and a "N" for DNS status as this file is the config file for the status table. Also update the constant `num_turtlebots` in `main.cpp` to make sure everything renders properly.
