@@ -6,14 +6,14 @@ import os
 import subprocess
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-change-this'
+app.config['SECRET_KEY'] = "default-key-lol"
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # add database later
 devices = {}
 
 def load_devices_from_file():
-    """Load turtlebot names from the old data file"""
+    """Load turtlebot names from the txt file"""
     global devices
     file_path = 'static/turtlebots.txt'
     if os.path.exists(file_path):
