@@ -1,0 +1,139 @@
+body {
+    background: #181c23;
+    font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', 'Liberation Mono', monospace;
+    margin: 0;
+    padding: 0;
+    color: #33ff33;
+}
+
+table {
+    table-layout: auto;
+    width: auto;       
+    min-width: 0;
+    max-width: none;
+    margin: 24px 0 0 40px; 
+    border-collapse: collapse;
+    background: #181c23;
+    font-size: 1.05em;
+    font-family: inherit;
+    box-shadow: 0 0 0 2px #33ff33;
+}
+
+th, td {
+    padding: 8px 16px;
+    text-align: left;
+    font-family: inherit;
+    border-right: 1px solid #33ff33;
+    border-bottom: 1px solid #33ff33;
+    white-space: nowrap; 
+}
+
+th:last-child, td:last-child {
+    border-right: none;
+}
+
+th {
+    background: #181c23;
+    color: #33ff33;
+    font-weight: 700;
+    border-top: 1px solid #33ff33;
+    border-bottom: 2px double #33ff33;
+    letter-spacing: 1px;
+}
+
+tr:first-child th {
+    border-top: 2px double #33ff33;
+}
+
+tbody tr {
+    transition: background 0.2s;
+}
+
+tbody tr:nth-child(even) {
+    background: #1a1e24;
+}
+
+tbody tr:nth-child(odd) {
+    background: #181c23;
+}
+
+tbody tr:hover {
+    background: #26332a;
+}
+
+td {
+    color: #33ff33;
+}
+
+tbody tr:last-child td {
+    border-bottom: 2px double #33ff33;
+}
+
+/* ROS logo dots for fun */
+.ros-logo-title {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    margin-top: 32px;
+    margin-bottom: 24px;
+    margin-left:40px;
+    font-size: medium;
+}
+
+.ros-logo {
+    display: grid;
+    grid-template-columns: repeat(3, 12px);
+    grid-template-rows: repeat(3, 12px);
+    gap: 6px;
+    margin-right: 18px;
+}
+
+.ros-dot {
+    width: 12px;
+    height: 12px;
+    background: #33ff33;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.terminal-frame {
+    border: 2px solid #33ff33;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 20px 40px;
+}
+
+.terminal-bar {
+    background: #333;
+    padding: 8px 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.terminal-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.terminal-dot.red {
+    background: #ff5f56;
+}
+
+.terminal-dot.yellow {
+    background: #ffbd2e;
+}
+
+.terminal-dot.green {
+    background: #27c93f;
+}
+
+.footer {
+    text-align: center;
+    color: #33ff33;
+    margin-top: 40px;
+    padding: 20px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
