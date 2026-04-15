@@ -8,6 +8,7 @@
 
 .old_files/
 __pycache__/
+.tb_site/
 
 # do not push wifi password to gh
 include/wifi-conn.h
