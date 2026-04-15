@@ -5,10 +5,7 @@
 .vscode/launch.json
 .vscode/ipch
 
-
+# my directories
 .old_files/
 __pycache__/
 .tb_site/
-
-# do not push wifi password to gh
-include/wifi-conn.h

@@ -1,14 +1,15 @@
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-import json
 import os
+import subprocess
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Store devices in memory (add database later)
+# add database later
 devices = {}
 
 def load_devices_from_file():
@@ -31,8 +32,44 @@ def load_devices_from_file():
                         'lastConnected': parts[3] if len(parts) > 3 else ''
                     }
 
-# Load devices on startup
+# load on startup
 load_devices_from_file()
+
+def check_dns_status(turtlebot_name):
+    """Check if a turtlebot is reachable via its DNS name"""
+    if not turtlebot_name:
+        return 'N'
+    
+    # build hostnames
+    hostname = f"{turtlebot_name}.dyn.wpi.edu"
+    
+    try:
+        result = subprocess.run(['ping', '-c', '1', hostname], 
+                              timeout=2, capture_output=True)
+        return 'Y' if result.returncode == 0 else 'N'
+    except:
+        return 'N'
+    
+# ping all turtlebots immediately on startup
+def ping_all_turtlebots():
+    """Ping all turtlebots and update DNS status"""
+    global devices
+    print("pinging all turtlebot DNS...")
+    
+    for name in devices:
+        old_dns = devices[name]['dns']
+        new_dns = check_dns_status(name)
+        
+        if old_dns != new_dns:
+            devices[name]['dns'] = new_dns
+            print(f"  {name}: DNS {old_dns} → {new_dns}")
+            
+            # Broadcast update to all connected clients
+            socketio.emit('update', {'device': devices[name]})
+
+# startup ping
+print("Starting initial DNS check...")
+ping_all_turtlebots()
 
 @app.route("/")
 def index():
@@ -56,16 +93,14 @@ def update_device():
         if name not in devices:
             return jsonify({"status": "error", "message": "Device not found"}), 404
         
-        # Update only provided fields
         if 'ip' in data:
             devices[name]['ip'] = data['ip']
-        if 'dns' in data:
+            devices[name]['dns'] = check_dns_status(name)
+        elif 'dns' in data:
             devices[name]['dns'] = data['dns']
         
-        # Update last connected timestamp
         devices[name]['lastConnected'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Broadcast update to all connected clients
         socketio.emit('update', {'device': devices[name]})
         
         return jsonify({
@@ -90,5 +125,14 @@ def handle_request_update():
     """Client requested a full device list update"""
     emit('devices_update', {'devices': list(devices.values())}, broadcast=True)
 
+# background scheduling
+scheduler = BackgroundScheduler()
+scheduler.add_job(ping_all_turtlebots, 'interval', minutes=1)
+
 if __name__ == "__main__":
+    # startup pnig
+    print("starting initial DNS check...")
+    ping_all_turtlebots()
+    
+    scheduler.start()
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

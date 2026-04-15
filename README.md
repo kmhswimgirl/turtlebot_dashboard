@@ -24,6 +24,32 @@ A Flask-based web dashboard for managing and monitoring Turtlebot Raspberry Pis.
 3. **Access the dashboard:**
    - Open `http://localhost:5000` in your browser
 
+## TurtleBot Configuration
+
+Example bash script to run at boot (add to .bashrc):
+```bash
+#!/bin/bash
+
+# Wait for dashboard to be reachable
+echo "Waiting for dashboard..."
+for i in {1..15}; do
+    if curl -s --max-time 2 "${SERVER_URL}" > /dev/null 2>&1; then
+        echo "Dashboard reachable!"
+        break
+    fi
+    echo "  Attempt $i/15..."
+    sleep 1
+done
+
+# Post to dashboard
+curl -X POST "${SERVER_URL}/devices" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\": \"${TURTLEBOT_NAME}\", \"ip\": \"${IP_ADDR}\"}"
+
+echo "posted ${TURTLEBOT_NAME} at ${IP_ADDR} to ${SERVER_URL}"
+exit 0
+```
+
 ## API Endpoints
 
 ### GET /devices
