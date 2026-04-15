@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turtlebot Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 <div class="ros-logo-title">
@@ -41,6 +41,7 @@
   <span>&copy; 2026 RBE 3002 Turtlebot Dashboard &mdash; Developed by Kylie Herbstzuber</span>
 </footer>
 
-<script src="actions.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/actions.js') }}"></script>
 </body>
 </html>
