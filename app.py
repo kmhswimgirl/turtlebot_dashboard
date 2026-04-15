@@ -36,18 +36,20 @@ def load_devices_from_file():
 load_devices_from_file()
 
 def check_dns_status(turtlebot_name):
-    """Check if a turtlebot is reachable via its DNS name"""
+    """Check if a turtlebot DNS name can be resolved"""
     if not turtlebot_name:
         return 'N'
     
-    # build hostnames
     hostname = f"{turtlebot_name}.dyn.wpi.edu"
     
     try:
-        result = subprocess.run(['ping', '-c', '1', hostname], 
+        result = subprocess.run(['nslookup', hostname], 
                               timeout=2, capture_output=True)
-        return 'Y' if result.returncode == 0 else 'N'
-    except:
+        status = 'Y' if result.returncode == 0 else 'N'
+        print(f"  DNS {hostname}: {status}")
+        return status
+    except Exception as e:
+        print(f"  DNS {hostname}: ERROR - {e}")
         return 'N'
     
 # ping all turtlebots immediately on startup
@@ -130,7 +132,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(ping_all_turtlebots, 'interval', minutes=1)
 
 if __name__ == "__main__":
-    # startup pnig
+    # startup ping
     print("starting initial DNS check...")
     ping_all_turtlebots()
     

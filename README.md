@@ -22,7 +22,7 @@ A Flask-based web dashboard for managing and monitoring Turtlebot Raspberry Pis.
    ```
 
 3. **Access the dashboard:**
-   - Open `http://localhost:5000` in your browser
+   - Open `http://rbe-turtlebots.dyn.wpi.edu:5000` in your browser
 
 ## TurtleBot Configuration
 
